@@ -31,4 +31,4 @@ On the first screen, enter the hostname and the port on which OpenSong can be re
 
 ## License
 
-[The GNU Lesser General Public License, version 2.1 (LGPL-2.1)](http://www.opensource.org/licenses/lgpl-2.1.php)
+[GNU General Public License v2.0 (GPL-2.0)](http://opensource.org/licenses/gpl-2.0.php)
