@@ -1,0 +1,374 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://	www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Opensong Second screen</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.1/jquery.mobile.min.css">
+	<link rel="stylesheet" type="text/css" href="opensong.min.css" />
+	<script type="text/javascript" src="opensong.min.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/json2/20121008/json2.min.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.1/jquery.mobile.min.js"></script>
+	<script type="text/javascript" charset="utf-8">
+	function logMsg(msg) {
+		if (window.console && console.log) {
+		  console.log(msg);
+		}
+	};
+
+	$(document).ready(function(){
+		(function($){
+		  $.fn.OpenSongSecondScreen = function(options) {
+
+        var defaults = {
+          host: 'localhost',
+          port: 8082,
+        };
+        
+        var constants = {
+          modes: {
+          UNSET: 0,
+          SLIDE: 1,
+          LYRIC: 2,
+          },
+          states: {
+          UNCONNECTED:     0,
+          CONNECTING:      1,
+          CONNECTED:       2,
+          NO_PRESENTATION: 3,
+          PRESENTING:      4,
+          }
+        };
+
+        var secondscreen = $.extend({
+          _container: this,
+          _ws: null,
+          _mode: constants.modes.UNSET,
+          _status: constants.states.UNCONNECTED,
+          _slidenumber: 0,
+          _resizeTimeOut: null,
+
+          _init: function() {
+            this._container.find('#address').attr('placeholder', this.host);
+            this._container.find('#port').attr('placeholder', this.port);
+
+            this._container.find('#connectSlide').bind('click', $.proxy(function() {
+              this._container.find("#connectionerror").hide();
+
+              var address = this._container.find('#address').val();
+              if (!address) address = this.host;
+              var port = this._container.find('#port').val();
+              if (!port) port = this.port;
+
+              this.Connect(address, port, this.modes.SLIDE);
+            }, this));
+
+            this._container.find('#connectLyric').bind('click', $.proxy(function() {
+              this._container.find("#connectionerror").hide();
+
+              var address = this._container.find('#address').val();
+              if (!address) address = this.host;
+              var port = this._container.find('#port').val();
+              if (!port) port = this.port;
+
+              this.Connect(address, port, this.modes.LYRIC);
+            }, this));
+
+            this._container.find('#configure').bind('click', $.proxy(function(e) {
+              if (this._ws) {
+                this._ws.close();
+              } else if (this._status != this.states.UNCONNECTED) {
+                this.SetStatus(this.states.UNCONNECTED)
+              }
+            }, this));
+            
+            this._container.find('#showSlide').bind('click', $.proxy(function(e) {
+              this.SetMode(this.modes.SLIDE);
+            }, this));
+            
+            this._container.find('#showLyric').bind('click', $.proxy(function(e) {
+              this.SetMode(this.modes.LYRIC);
+            }, this));
+            
+            $( window ).resize($.proxy(function(e) {
+              if (this._resizeTimeOut) clearTimeout(this._resizeTimeOut);
+              //Do not immediately resize, but wait 250ms to prevent redraw during resizing
+              this._resizeTimeOut = setTimeout($.proxy(function(e) {
+                this._updateScreen();
+              }, this), 250);
+            }, this));
+          },
+          
+          Connect: function(host, port, mode) {
+            if ((this.host != host) || (this.port != port) || (!this._ws)) {
+              if (this._ws) {
+                this._ws.onclose = function(close){};
+                this._ws.close();
+                this._ws = null;
+              }
+
+              this.SetStatus(this.states.CONNECTING);
+              this._ws = new WebSocket('ws://'+host+':'+port+'/ws');
+
+              if (this._ws) {
+                this._ws.onopen = $.proxy(function(open) {
+                  this.host = host;
+                  this.port = port;
+                
+                  this.SetStatus(this.states.CONNECTED);
+                  //logMsg('OS: ws connection established');
+                  this._ws.send('/ws/subscribe/presentation');
+                }, this);
+
+                this._ws.onclose = $.proxy(function(close) {
+                  /*var log='OS: ws connection closed';
+                  if (close instanceof CloseEvent) {
+                    log += ' ('+close.code+': '+close.reason+')';
+                  }
+                  logMsg(log);*/
+
+                  this.SetStatus(this.states.UNCONNECTED);
+                }, this);
+
+                this._ws.onerror = $.proxy(function(error) {
+                  var msg = 'The connection to OpenSong failed ';
+                  if (error instanceof CloseEvent) {
+                    msg += ' ('+error.code+': '+error.reason+')';
+                  }
+
+                  this._container.find("#connectionerror").text(msg).show("fast");
+                }, this);
+
+                this._ws.onmessage = $.proxy(function(message) {
+                  logMsg('OS: ws message: '+message.data);
+                  if (message instanceof MessageEvent) {
+                    if (message.data != 'OK') {
+                      var xmlDoc = $.parseXML(message.data);
+                      var xmlObj = $(xmlDoc);
+                      if (xmlObj)
+                      {
+                        var presentation = xmlObj.find("response presentation");
+                        if (presentation) {
+                          var running = presentation.attr("running");
+                          if (running == 1) {
+                            this.SetStatus(this.states.PRESENTING);
+                            
+                            var slidenr = presentation.find("slide").attr("itemnumber");
+                            this.ShowSlide(slidenr);
+                          } else {
+                            this.SetStatus(this.states.NO_PRESENTATION);
+                          }
+                        }
+                      }
+                    }
+                  }
+                }, this);
+              }
+            }
+
+            if (mode) {
+              this.SetMode(mode);
+            }
+          },
+          
+          _updateScreen: function() {
+            var width = $(window).width();
+            var height = $(window).height();
+            
+            this._container.find("#secondscreen").css("line-height", height+'px');
+            if ((this._status == this.states.PRESENTING) && (this._slidenumber > 0)) {
+              var secondscreen = this._container.find("#secondscreen");
+
+              if (this._mode == this.modes.SLIDE) {
+                var url = 'http://'+this.host+':'+this.port+'/presentation/slide/'+this._slidenumber+'/preview';
+                if (width < height) {
+                  url+='/width:'+width;
+                } else {
+                  url+='/height:'+height;
+                }
+                url+='/quality:85';
+    
+                var preloadImg = document.createElement('img');
+                preloadImg.onload = function(){
+                  secondscreen.children().remove();
+                  secondscreen.append($("<div>", { "class": "slide" }).append($("<img>", { src: url })));
+                };
+                preloadImg.src = url;
+
+              } else if (this._mode == this.modes.LYRIC) {
+                //Render using OpenSong.js
+                $.ajax({
+                  type: "GET",
+                  dataType: 'xml',
+                  url: 'http://'+this.host+':'+this.port+'/presentation/slide/'+this._slidenumber,
+                  context: this,
+                  success: function(data, status, xhr) {
+                    var xmlDoc = $.parseXML(xhr.responseText);
+                    var xmlObj = $(xmlDoc);
+                    if (xmlObj)
+                    {
+                      var slide = xmlObj.find("response resource");
+                      if (slide) {
+                        var lyrics = xmlObj.find("lyrics");
+                        if (lyrics) {
+                          var lyricEl = $("<div>", { "class": "lyric" });
+                          secondscreen.children().remove();
+                          secondscreen.append(lyricEl);
+
+                          openSong = new opensong.Song(lyricEl, lyrics.text());
+                        }
+                      }
+                    }
+                  },
+                });
+              }
+            }
+          },
+
+          SetMode: function(mode) {
+            if (mode == this.modes.SLIDE ||
+              mode == this.modes.LYRIC)
+            {
+              if (this._mode != mode) {
+                this._mode = mode
+                if (this._ws) {
+                  this._updateScreen();
+                }
+              }
+            }
+          },
+          
+          SetStatus: function(state) {
+            if (this._status != state) {
+              if (state == this.states.UNCONNECTED) {
+                this._ws = null;
+                this._container.find("#secondscreen").children().remove();
+
+                this._slidenumber = 0
+                //TODO: Properly go to main screen
+                $.mobile.back();
+
+                this._status = state;
+              } else if (state == this.states.CONNECTING) {
+                //Inform the user we are waiting for a connection
+                this._container.find("#notification").remove();
+                this._container.find("#secondscreen").append($("<div>", {id: "notification"}).text("Connecting ..."));
+                this._status = state;
+              } else if (state == this.states.CONNECTED) {
+                //No need to do something
+                this._status = state;
+              } else if (state == this.states.NO_PRESENTATION) {
+                this._slidenumber = 0
+                this._container.find("#secondscreen").children().remove();
+                this._container.find("#secondscreen").append($("<div>", {id: "notification"}).text("No active presentation, waiting for a presentation to start ..."));
+              } else if (state == this.states.PRESENTING) {
+                //Remove any present notification
+                this._container.find("#notification").remove();
+                this._status = state;
+              }
+              
+              this._updateScreen();
+            }
+          },
+          
+          ShowSlide: function(slidenumber) {
+            if (this._slidenumber != slidenumber) {
+              this._slidenumber = slidenumber
+              this._updateScreen();
+            }
+          },
+          
+        }, defaults, options, constants);
+
+        return this.each(function() {
+          secondscreen._init();
+        });
+		  };
+
+		})(jQuery);
+
+		$(function(){
+		  $('#opensong').OpenSongSecondScreen();
+		});
+	});
+	</script>
+	<style>
+		body {
+			overflow: hidden;
+		}
+		#connectionerror {
+			background-color: #ff9494;
+			border: 1px solid #333;
+			padding: 1em;
+			text-shadow: none;
+			display: none;
+		}
+		
+		#secondscreen {
+			/*vertical-align: middle;*/
+			text-align: center;
+			/*position: relative;*/
+		}
+
+		#secondscreen .slide {
+			/*position: absolute;*/
+		}
+
+		#secondscreen .slide img, #notification {
+			vertical-align: middle;
+			display: inline-block;
+			margin-left: auto;
+			margin-right: auto;
+		}
+
+		#secondscreen .lyric {
+			line-height: 1em;
+		}
+		</style>
+</head> 
+<body>
+<div id="opensong">
+	<div id="main" data-role="page">
+		<div data-role="header">
+			<h1 class="header">OpenSong Second screen</h1>
+		</div>
+    
+		<div role="main" class="ui-content">
+			<div id="connectionerror">Test notification</div>
+
+			<p class="validateTips">OpenSong Connection</p>
+			<form>
+				<fieldset>
+					<label for="opensong-address">Hostname or ip-address</label>
+					<input type="text" id="address" class="text ui-widget-content ui-corner-all" size="20">
+
+					<label for="opensong-port">Port</label>
+					<input type="text" id="port" class="text ui-widget-content ui-corner-all" size="5">
+
+					<a id="connectSlide" href="#screen" data-role="button" data-icon="grid" class="ui-btn ui-btn-inline ui-icon-grid ui-btn-icon-left">Show slides</a>
+					<a id="connectLyric" href="#screen" data-role="button" data-icon="bars" class="ui-btn ui-btn-inline ui-icon-bars ui-btn-icon-left">Show lyrics</a>
+				</fieldset>
+			</form>
+			
+		</div>
+	</div>
+
+	<div id="screen" data-role="page" class="type-interior">
+		<div data-role="header" data-position="fixed" data-fullscreen="true">
+			<h1 class="header">OpenSong Second screen</h1>
+		</div>
+
+		<div role="main" class="ui-content">
+			<div id="secondscreen"></div>
+		</div>
+
+ 		<div data-role="footer" data-position="fixed" data-fullscreen="true">
+			<a href="#" id="configure" data-role="button" data-inline="true" data-icon="gear" data-mini="true">Config</a>
+			<a href="#" id="showSlide" data-role="button" data-inline="true" data-icon="grid" data-mini="true">Slides</a>
+			<a href="#" id="showLyric" data-role="button" data-inline="true" data-icon="`bars" data-mini="true">Lyrics</a>
+		</div>
+	</div>
+</div>
+</body>
+</html>
