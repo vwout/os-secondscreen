@@ -1,25 +1,25 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://	www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://  www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-	<title>Opensong Second screen</title>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.1/jquery.mobile.min.css">
-	<link rel="stylesheet" type="text/css" href="opensong.min.css" />
-	<script type="text/javascript" src="opensong.min.js"></script>
-	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/json2/20121008/json2.min.js"></script>
-	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.1/jquery.mobile.min.js"></script>
-	<script type="text/javascript" charset="utf-8">
-	function logMsg(msg) {
-		if (window.console && console.log) {
-		  console.log(msg);
-		}
-	};
+  <title>Opensong Second screen</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.1/jquery.mobile.min.css">
+  <link rel="stylesheet" type="text/css" href="opensong.min.css" />
+  <script type="text/javascript" src="opensong.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/json2/20121008/json2.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.1/jquery.mobile.min.js"></script>
+  <script type="text/javascript" charset="utf-8">
+  function logMsg(msg) {
+    if (window.console && console.log) {
+      console.log(msg);
+    }
+  };
 
-	$(document).ready(function(){
-		(function($){
-		  $.fn.OpenSongSecondScreen = function(options) {
+  $(document).ready(function(){
+    (function($){
+      $.fn.OpenSongSecondScreen = function(options) {
 
         var defaults = {
           host: 'localhost',
@@ -284,91 +284,91 @@
         return this.each(function() {
           secondscreen._init();
         });
-		  };
+      };
 
-		})(jQuery);
+    })(jQuery);
 
-		$(function(){
-		  $('#opensong').OpenSongSecondScreen();
-		});
-	});
-	</script>
-	<style>
-		body {
-			overflow: hidden;
-		}
-		#connectionerror {
-			background-color: #ff9494;
-			border: 1px solid #333;
-			padding: 1em;
-			text-shadow: none;
-			display: none;
-		}
-		
-		#secondscreen {
-			/*vertical-align: middle;*/
-			/*position: relative;*/
-		}
+    $(function(){
+      $('#opensong').OpenSongSecondScreen();
+    });
+  });
+  </script>
+  <style>
+    body {
+      overflow: hidden;
+    }
+    #connectionerror {
+      background-color: #ff9494;
+      border: 1px solid #333;
+      padding: 1em;
+      text-shadow: none;
+      display: none;
+    }
+    
+    #secondscreen {
+      /*vertical-align: middle;*/
+      /*position: relative;*/
+    }
 
-		#secondscreen .slide {
-			/*position: absolute;*/
+    #secondscreen .slide {
+      /*position: absolute;*/
             text-align: center;
-		}
+    }
 
-		#secondscreen .slide img, #notification {
-			vertical-align: middle;
-			display: inline-block;
-			margin-left: auto;
-			margin-right: auto;
-		}
+    #secondscreen .slide img, #notification {
+      vertical-align: middle;
+      display: inline-block;
+      margin-left: auto;
+      margin-right: auto;
+    }
 
-		#secondscreen .lyric {
-			line-height: 1em;
-		}
-		</style>
+    #secondscreen .lyric {
+      line-height: 1em;
+    }
+    </style>
 </head> 
 <body>
 <div id="opensong">
-	<div id="main" data-role="page">
-		<div data-role="header">
-			<h1 class="header">OpenSong Second screen</h1>
-		</div>
+  <div id="main" data-role="page">
+    <div data-role="header">
+      <h1 class="header">OpenSong Second screen</h1>
+    </div>
     
-		<div role="main" class="ui-content">
-			<div id="connectionerror">Test notification</div>
+    <div role="main" class="ui-content">
+      <div id="connectionerror">Test notification</div>
 
-			<p class="validateTips">OpenSong Connection</p>
-			<form>
-				<fieldset>
-					<label for="opensong-address">Hostname or ip-address</label>
-					<input type="text" id="address" class="text ui-widget-content ui-corner-all" size="20">
+      <p class="validateTips">OpenSong Connection</p>
+      <form>
+        <fieldset>
+          <label for="opensong-address">Hostname or ip-address</label>
+          <input type="text" id="address" class="text ui-widget-content ui-corner-all" size="20">
 
-					<label for="opensong-port">Port</label>
-					<input type="text" id="port" class="text ui-widget-content ui-corner-all" size="5">
+          <label for="opensong-port">Port</label>
+          <input type="text" id="port" class="text ui-widget-content ui-corner-all" size="5">
 
-					<a id="connectSlide" href="#screen" data-role="button" data-icon="grid" class="ui-btn ui-btn-inline ui-icon-grid ui-btn-icon-left">Show slides</a>
-					<a id="connectLyric" href="#screen" data-role="button" data-icon="bars" class="ui-btn ui-btn-inline ui-icon-bars ui-btn-icon-left">Show lyrics</a>
-				</fieldset>
-			</form>
-			
-		</div>
-	</div>
+          <a id="connectSlide" href="#screen" data-role="button" data-icon="grid" class="ui-btn ui-btn-inline ui-icon-grid ui-btn-icon-left">Show slides</a>
+          <a id="connectLyric" href="#screen" data-role="button" data-icon="bars" class="ui-btn ui-btn-inline ui-icon-bars ui-btn-icon-left">Show lyrics</a>
+        </fieldset>
+      </form>
+      
+    </div>
+  </div>
 
-	<div id="screen" data-role="page" class="type-interior">
-		<div data-role="header" data-position="fixed" data-fullscreen="true">
-			<h1 class="header">OpenSong Second screen</h1>
-		</div>
+  <div id="screen" data-role="page" class="type-interior">
+    <div data-role="header" data-position="fixed" data-fullscreen="true">
+      <h1 class="header">OpenSong Second screen</h1>
+    </div>
 
-		<div role="main" class="ui-content">
-			<div id="secondscreen"></div>
-		</div>
+    <div role="main" class="ui-content">
+      <div id="secondscreen"></div>
+    </div>
 
- 		<div data-role="footer" data-position="fixed" data-fullscreen="true">
-			<a href="#" id="configure" data-role="button" data-inline="true" data-icon="gear" data-mini="true">Config</a>
-			<a href="#" id="showSlide" data-role="button" data-inline="true" data-icon="grid" data-mini="true">Slides</a>
-			<a href="#" id="showLyric" data-role="button" data-inline="true" data-icon="`bars" data-mini="true">Lyrics</a>
-		</div>
-	</div>
+     <div data-role="footer" data-position="fixed" data-fullscreen="true">
+      <a href="#" id="configure" data-role="button" data-inline="true" data-icon="gear" data-mini="true">Config</a>
+      <a href="#" id="showSlide" data-role="button" data-inline="true" data-icon="grid" data-mini="true">Slides</a>
+      <a href="#" id="showLyric" data-role="button" data-inline="true" data-icon="`bars" data-mini="true">Lyrics</a>
+    </div>
+  </div>
 </div>
 </body>
 </html>
