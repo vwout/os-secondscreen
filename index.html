@@ -6,7 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.1/jquery.mobile.min.css">
   <link rel="stylesheet" type="text/css" href="opensong.min.css" />
-  <script type="text/javascript" src="opensong.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="chroma.css" />
+  <script type="text/javascript" src="opensong.min.js"></script>  
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/json2/20121008/json2.min.js"></script>
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.1/jquery.mobile.min.js"></script>
@@ -31,6 +32,7 @@
           UNSET: 0,
           SLIDE: 1,
           LYRIC: 2,
+          CHROMA: 3,
           },
           states: {
           UNCONNECTED:     0,
@@ -74,6 +76,17 @@
 
               this.Connect(address, port, this.modes.LYRIC);
             }, this));
+            
+            this._container.find('#connectChroma').bind('click', $.proxy(function() {
+              this._container.find("#connectionerror").hide();
+
+              var address = this._container.find('#address').val();
+              if (!address) address = this.host;
+              var port = this._container.find('#port').val();
+              if (!port) port = this.port;
+
+              this.Connect(address, port, this.modes.CHROMA);
+            }, this));
 
             this._container.find('#configure').bind('click', $.proxy(function(e) {
               if (this._ws) {
@@ -89,6 +102,10 @@
             
             this._container.find('#showLyric').bind('click', $.proxy(function(e) {
               this.SetMode(this.modes.LYRIC);
+            }, this));
+            
+            this._container.find('#showChroma').bind('click', $.proxy(function(e) {
+              this.SetMode(this.modes.CHROMA);
             }, this));
             
             $( window ).resize($.proxy(function(e) {
@@ -181,6 +198,9 @@
               var secondscreen = this._container.find("#secondscreen");
 
               if (this._mode == this.modes.SLIDE) {
+                $("#screen").removeClass("chroma");
+                $("#chroma").removeClass("currentslideactive");
+                $("#chroma").addClass("currentslideinactive"); 
                 var url = 'http://'+this.host+':'+this.port+'/presentation/slide/'+this._slidenumber+'/preview';
                 if (width < height) {
                   url+='/width:'+width;
@@ -198,6 +218,9 @@
 
               } else if (this._mode == this.modes.LYRIC) {
                 //Render using OpenSong.js
+                $("#screen").removeClass("chroma");
+                $("#chroma").removeClass("currentslideactive");
+                $("#chroma").addClass("currentslideinactive"); 
                 $.ajax({
                   type: "GET",
                   dataType: 'xml',
@@ -209,7 +232,7 @@
                     if (xmlObj)
                     {
                       var slide = xmlObj.find("response resource");
-                      if (slide) {
+                      if (slide) {                        
                         var lyrics = xmlObj.find("lyrics");
                         if (lyrics) {
                           var lyricEl = $("<div>", { "class": "lyric" });
@@ -222,13 +245,54 @@
                     }
                   },
                 });
+              } else if (this._mode == this.modes.CHROMA) {
+                // Extract current text
+                $.ajax({
+                  type: "GET",
+                  dataType: 'xml',
+                  url: 'http://'+this.host+':'+this.port+'/presentation/slide/'+this._slidenumber,
+                  context: this,
+                  success: function(data, status, xhr) {
+                    var xmlDoc = $.parseXML(xhr.responseText);
+                    var xmlObj = $(xmlDoc);
+                    if (xmlObj)
+                    {
+                      var slide = xmlObj.find("response resource");
+                      if (slide) {
+                        var slides = xmlObj.find("slides");
+                        if (slides) {
+                          var current_slide = xmlObj.find("slide");
+                          if (current_slide) {
+                            var lyrics = xmlObj.find("body");
+                            if (lyrics) {
+                              var lyricEl = $("<div>", { "class": "lyric" });
+                              secondscreen.children().remove(); 
+                              $("#screen").addClass("chroma");
+                              if (lyrics.text()) {
+                                $("#chroma").removeClass("currentslideinactive");
+                                $("#chroma").addClass("currentslideactive");                              
+                                $("#chroma").html(lyrics.text());  
+                              } else {
+                                $("#chroma").html(""); 
+                                $("#chroma").removeClass("currentslideactive");
+                                $("#chroma").addClass("currentslideinactive"); 
+                              }
+                                                        
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                });
               }
             }
           },
 
           SetMode: function(mode) {
             if (mode == this.modes.SLIDE ||
-              mode == this.modes.LYRIC)
+              mode == this.modes.LYRIC ||
+              mode == this.modes.CHROMA)
             {
               if (this._mode != mode) {
                 this._mode = mode
@@ -261,6 +325,9 @@
               } else if (state == this.states.NO_PRESENTATION) {
                 this._slidenumber = 0
                 this._container.find("#secondscreen").children().remove();
+                $("#chroma").html(""); 
+                $("#chroma").removeClass("currentslideactive");
+                $("#chroma").addClass("currentslideinactive"); 
                 this._container.find("#secondscreen").append($("<div>", {id: "notification"}).text("No active presentation, waiting for a presentation to start ..."));
               } else if (state == this.states.PRESENTING) {
                 //Remove any present notification
@@ -348,6 +415,7 @@
 
           <a id="connectSlide" href="#screen" data-role="button" data-icon="grid" class="ui-btn ui-btn-inline ui-icon-grid ui-btn-icon-left">Show slides</a>
           <a id="connectLyric" href="#screen" data-role="button" data-icon="bars" class="ui-btn ui-btn-inline ui-icon-bars ui-btn-icon-left">Show lyrics</a>
+          <a id="connectChroma" href="#screen" data-role="button" data-icon="bars" class="ui-btn ui-btn-inline ui-icon-bars ui-btn-icon-left">Show Chroma</a>
         </fieldset>
       </form>
       
@@ -361,12 +429,14 @@
 
     <div role="main" class="ui-content">
       <div id="secondscreen"></div>
+      <div id="chroma" class="currentslideinactive"></div>
     </div>
 
      <div data-role="footer" data-position="fixed" data-fullscreen="true">
       <a href="#" id="configure" data-role="button" data-inline="true" data-icon="gear" data-mini="true">Config</a>
       <a href="#" id="showSlide" data-role="button" data-inline="true" data-icon="grid" data-mini="true">Slides</a>
       <a href="#" id="showLyric" data-role="button" data-inline="true" data-icon="`bars" data-mini="true">Lyrics</a>
+      <a href="#" id="showChroma" data-role="button" data-inline="true" data-icon="grid" data-mini="true">Chroma</a>
     </div>
   </div>
 </div>

@@ -6,7 +6,7 @@ The OpenSong Second Screen app is a readonly client for the [OpenSong API](http:
 The features are:
 - display of the current slide as image
 - display of lyrics and verses including chords using [opensong.js](https://github.com/deepflame/opensong.js)
-
+- display of the body text of the current slide moved to the bottom of the screen with a green background to be used as a chroma overlay for videos.
 
 ## What is OpenSong?
 
@@ -26,7 +26,7 @@ The features are:
 ### Usage
 
 Open the file secondscreen.html (using your webserver url, if installed on a webserver).
-On the first screen, enter the hostname and the port on which OpenSong can be reached from the client. The secondscreen application does not run any server side code. The connection to OpenSong is made from the computer that loads the web page. Now click 'Show slides' to see the image as rendered by OpenSong. Click 'Show lyrics' to show the songs rendered using opensong.js.
+On the first screen, enter the hostname and the port on which OpenSong can be reached from the client. The secondscreen application does not run any server side code. The connection to OpenSong is made from the computer that loads the web page. Now click 'Show slides' to see the image as rendered by OpenSong. Click 'Show lyrics' to show the songs rendered using opensong.js. Click 'Show Chroma' to show the slide text over a green background for chroma overlay on videos.
 
 
 ## License
