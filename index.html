@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.1/jquery.mobile.min.css">
   <link rel="stylesheet" type="text/css" href="opensong.min.css" />
-  <link rel="stylesheet" type="text/css" href="chroma.css" />
   <script type="text/javascript" src="opensong.min.js"></script>  
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/json2/20121008/json2.min.js"></script>
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
@@ -193,14 +192,11 @@
             var width = $(window).width();
             var height = $(window).height();
             
-            this._container.find("#secondscreen").css("line-height", height+'px');
+            this._container.find("#secondscreen").css("min-height", height+'px');
             if ((this._status == this.states.PRESENTING) && (this._slidenumber > 0)) {
               var secondscreen = this._container.find("#secondscreen");
 
               if (this._mode == this.modes.SLIDE) {
-                $("#screen").removeClass("chroma");
-                $("#chroma").removeClass("currentslideactive");
-                $("#chroma").addClass("currentslideinactive"); 
                 var url = 'http://'+this.host+':'+this.port+'/presentation/slide/'+this._slidenumber+'/preview';
                 if (width < height) {
                   url+='/width:'+width;
@@ -218,9 +214,6 @@
 
               } else if (this._mode == this.modes.LYRIC) {
                 //Render using OpenSong.js
-                $("#screen").removeClass("chroma");
-                $("#chroma").removeClass("currentslideactive");
-                $("#chroma").addClass("currentslideinactive"); 
                 $.ajax({
                   type: "GET",
                   dataType: 'xml',
@@ -265,19 +258,14 @@
                           if (current_slide) {
                             var lyrics = xmlObj.find("body");
                             if (lyrics) {
-                              var lyricEl = $("<div>", { "class": "lyric" });
+                              var chromaEl = $("<div>", { "class": "chroma" }).css("min-height", height+'px');
                               secondscreen.children().remove(); 
-                              $("#screen").addClass("chroma");
                               if (lyrics.text()) {
-                                $("#chroma").removeClass("currentslideinactive");
-                                $("#chroma").addClass("currentslideactive");                              
-                                $("#chroma").html(lyrics.text());  
+                                chromaEl.append($("<div>", { "class": "active" }).html(lyrics.text()));
                               } else {
-                                $("#chroma").html(""); 
-                                $("#chroma").removeClass("currentslideactive");
-                                $("#chroma").addClass("currentslideinactive"); 
+                                chromaEl.append($("<div>", { "class": "inactive" }).html(""));
                               }
-                                                        
+                              secondscreen.append(chromaEl);
                             }
                           }
                         }
@@ -325,9 +313,6 @@
               } else if (state == this.states.NO_PRESENTATION) {
                 this._slidenumber = 0
                 this._container.find("#secondscreen").children().remove();
-                $("#chroma").html(""); 
-                $("#chroma").removeClass("currentslideactive");
-                $("#chroma").addClass("currentslideinactive"); 
                 this._container.find("#secondscreen").append($("<div>", {id: "notification"}).text("No active presentation, waiting for a presentation to start ..."));
               } else if (state == this.states.PRESENTING) {
                 //Remove any present notification
@@ -392,6 +377,36 @@
     #secondscreen .lyric {
       line-height: 1em;
     }
+    
+    #secondscreen .chroma {
+      background-color: rgba(0, 255, 0, 1.0);
+      font-family: sans-serif;
+      overflow: hidden;      
+    }
+      
+    #secondscreen .chroma .active {
+      width: 27em;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      vertical-align: middle;
+      border: 4px solid white;
+      background: rgba(0, 0, 0, 0.35);
+      font-size: 35pt;
+      color: white;
+      text-shadow: 0;
+      padding: 25px;
+      position: absolute;
+      left: 50%;
+      bottom: 0px;
+      -webkit-transform: translateX(-50%);
+      transform: translateX(-50%)
+    }
+      
+    #secondscreen .chroma .inactive {
+      background: rgba(0, 0, 0, 0);
+    }
     </style>
 </head> 
 <body>
@@ -415,7 +430,7 @@
 
           <a id="connectSlide" href="#screen" data-role="button" data-icon="grid" class="ui-btn ui-btn-inline ui-icon-grid ui-btn-icon-left">Show slides</a>
           <a id="connectLyric" href="#screen" data-role="button" data-icon="bars" class="ui-btn ui-btn-inline ui-icon-bars ui-btn-icon-left">Show lyrics</a>
-          <a id="connectChroma" href="#screen" data-role="button" data-icon="bars" class="ui-btn ui-btn-inline ui-icon-bars ui-btn-icon-left">Show Chroma</a>
+          <a id="connectChroma" href="#screen" data-role="button" data-icon="bars" class="ui-btn ui-btn-inline ui-icon-bars ui-btn-icon-left">Show chroma</a>
         </fieldset>
       </form>
       
@@ -429,7 +444,6 @@
 
     <div role="main" class="ui-content">
       <div id="secondscreen"></div>
-      <div id="chroma" class="currentslideinactive"></div>
     </div>
 
      <div data-role="footer" data-position="fixed" data-fullscreen="true">
